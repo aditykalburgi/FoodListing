@@ -1,0 +1,69 @@
+{
+  "record": [
+    {
+      "id": 1,
+      "name": "Margherita Pizza",
+      "rating": 4.8,
+      "category": "Italian",
+      "image": "https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=400",
+      "description": "Classic Italian pizza with fresh mozzarella, basil, and tomato sauce on a thin crust. A timeless favorite that showcases the simplicity and elegance of Italian cuisine.",
+      "tags": ["vegetarian", "cheese", "tomato"],
+      "price": 14.99,
+      "cuisine": "Italian",
+      "servings": 2,
+      "prepTime": "20 min"
+    },
+    {
+      "id": 2,
+      "name": "Spicy Thai Curry",
+      "rating": 4.6,
+      "category": "Asian",
+      "image": "https://images.unsplash.com/photo-1455619452474-d2be8b1e4e31?w=400",
+      "description": "Authentic Thai curry with coconut milk, basil, and fresh vegetables. A perfect balance of spicy, sweet, and aromatic flavors.",
+      "tags": ["spicy", "thai", "coconut"],
+      "price": 13.99,
+      "cuisine": "Thai",
+      "servings": 2,
+      "prepTime": "25 min"
+    },
+    {
+      "id": 3,
+      "name": "American Burger",
+      "rating": 4.5,
+      "category": "American",
+      "image": "https://images.unsplash.com/photo-1473093295203-cad00df16e50?w=400",
+      "description": "Juicy grilled beef patty with fresh lettuce, tomato, pickles, and special sauce. Served with crispy fries.",
+      "tags": ["beef", "burger", "american"],
+      "price": 12.49,
+      "cuisine": "American",
+      "servings": 1,
+      "prepTime": "15 min"
+    },
+    {
+      "id": 4,
+      "name": "Sushi Platter",
+      "rating": 4.7,
+      "category": "Japanese",
+      "image": "https://images.unsplash.com/photo-1579584425555-c3ce017fd53e?w=400",
+      "description": "Assorted fresh sushi rolls with premium ingredients. Includes California roll, spicy tuna, salmon, and vegetable rolls.",
+      "tags": ["japanese", "sushi", "seafood"],
+      "price": 22.99,
+      "cuisine": "Japanese",
+      "servings": 2,
+      "prepTime": "30 min"
+    },
+    {
+      "id": 5,
+      "name": "Falafel Wrap",
+      "rating": 4.4,
+      "category": "Mediterranean",
+      "image": "https://images.unsplash.com/photo-1609501676725-7186f017a4b7?w=400",
+      "description": "Crispy falafel with hummus, lettuce, tomato, and tahini sauce wrapped in warm pita bread.",
+      "tags": ["vegetarian", "mediterranean", "vegan"],
+      "price": 9.99,
+      "cuisine": "Mediterranean",
+      "servings": 1,
+      "prepTime": "10 min"
+    }
+  ]
+}
