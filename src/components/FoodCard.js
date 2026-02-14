@@ -13,19 +13,22 @@ const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
   const [scaleAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
+    if (!food) return;
     if (isFavoritedProp !== undefined) {
       setIsLocal_Favorited(isFavoritedProp);
     } else {
       checkFavoriteStatus();
     }
-  }, [isFavoritedProp]);
+  }, [isFavoritedProp, food]);
 
   const checkFavoriteStatus = async () => {
+    if (!food) return;
     const fav = await isFavorite(food.id);
     setIsLocal_Favorited(fav);
   };
 
   const handleFavoritePress = (e) => {
+    if (!food) return;
     // Animate heart button
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -44,6 +47,9 @@ const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
       onFavoritePress(food);
     }
   };
+
+  // Safety check after hooks
+  if (!food) return null;
 
   return (
     <Card 

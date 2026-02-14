@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,10 @@ import HomeScreen from '../screens/HomeScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import { colors } from '../styles/common';
+
+// Import icons from assets
+const homeIcon = require('../assets/logos/home.png');
+const favoritesIcon = require('../assets/logos/favorites.png');
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -72,7 +76,10 @@ const RootNavigator = () => {
             title: 'Home',
             tabBarLabel: 'Home',
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ fontSize: size, color }}>🏠</Text>
+              <Image
+                source={homeIcon}
+                style={{ width: size, height: size, tintColor: color }}
+              />
             ),
           }}
         />
@@ -83,7 +90,10 @@ const RootNavigator = () => {
             title: 'Favorites',
             tabBarLabel: 'Favorites',
             tabBarIcon: ({ color, size }) => (
-              <Text style={{ fontSize: size, color }}>❤️</Text>
+              <Image
+                source={favoritesIcon}
+                style={{ width: size, height: size, tintColor: color }}
+              />
             ),
           }}
         />

@@ -4,15 +4,17 @@ import {
   FlatList,
   StyleSheet,
   RefreshControl,
+  Animated,
+  StatusBar,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
   Text, 
   Searchbar, 
   ActivityIndicator, 
-  Surface,
   Button,
-  Divider,
+  Chip,
 } from 'react-native-paper';
 import FoodCard from '../components/FoodCard';
 import { fetchFoodItems } from '../services/foodService';
@@ -21,7 +23,9 @@ import {
   removeFavorite,
   isFavorite,
 } from '../utils/storageService';
-import { colors, spacing, typography, commonStyles } from '../styles/common';
+import { colors, spacing } from '../styles/common';
+
+const CATEGORIES = ['All', 'Pizza', 'Burger', 'Sushi', 'Dessert', 'Drinks'];
 
 const HomeScreen = ({ navigation }) => {
   const [foods, setFoods] = useState([]);
@@ -31,30 +35,41 @@ const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [favoriteStates, setFavoriteStates] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     loadFoods();
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredFoods(foods);
-    } else {
-      const filtered = foods.filter(food =>
-        food.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-      setFilteredFoods(filtered);
-    }
-  }, [searchQuery, foods]);
+    filterFoods();
+  }, [searchQuery, selectedCategory, foods]);
 
-  // Reload favorite states when screen is focused
   useFocusEffect(
     useCallback(() => {
       updateFavoriteStates();
     }, [foods])
   );
+
+  const filterFoods = () => {
+    let filtered = foods;
+
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(food => 
+        food.category?.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+
+    if (searchQuery.trim() !== '') {
+      filtered = filtered.filter(food =>
+        food.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        food.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        food.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    setFilteredFoods(filtered);
+  };
 
   const loadFoods = async () => {
     setLoading(true);
@@ -108,12 +123,18 @@ const HomeScreen = ({ navigation }) => {
 
   if (loading && !refreshing) {
     return (
-      <View style={commonStyles.safeArea}>
-        <View style={commonStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} animating={true} />
-          <Text variant="bodyMedium" style={styles.loadingText}>
-            Loading delicious food items...
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text variant="headlineMedium" style={styles.headerTitle}>
+            Food Listings
           </Text>
+          <Text variant="bodyMedium" style={styles.headerSubtitle}>
+            Discover delicious food
+          </Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </View>
     );
@@ -121,20 +142,24 @@ const HomeScreen = ({ navigation }) => {
 
   if (error && foods.length === 0) {
     return (
-      <View style={commonStyles.safeArea}>
-        <View style={commonStyles.centerContainer}>
-          <Text style={styles.errorText}>❌</Text>
-          <Text variant="titleMedium" style={styles.errorMessage}>
-            {error}
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text variant="headlineMedium" style={styles.headerTitle}>
+            Food Listings
           </Text>
-          <Text variant="bodySmall" style={styles.retryText}>
-            Please check your internet connection and try again.
+        </View>
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorEmoji}>😕</Text>
+          <Text variant="titleLarge" style={styles.errorTitle}>
+            Oops! Something went wrong
+          </Text>
+          <Text variant="bodyMedium" style={styles.errorMessage}>
+            {error}
           </Text>
           <Button 
             mode="contained" 
             onPress={loadFoods} 
             style={styles.retryButton}
-            icon="refresh"
           >
             Try Again
           </Button>
@@ -143,81 +168,92 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
-  if (foods.length === 0) {
-    return (
-      <View style={commonStyles.safeArea}>
-        <View style={commonStyles.centerContainer}>
-          <Text style={styles.emptyText}>🍽️</Text>
-          <Text variant="titleMedium" style={styles.emptyMessage}>
-            No food items found
-          </Text>
-          <Text variant="bodySmall" style={styles.emptySubtext}>
-            Please try refreshing the page
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={commonStyles.safeArea}>
-      <View style={styles.container}>
-        {/* Header Section */}
-        <Surface style={styles.headerSurface} elevation={2}>
-          <Text variant="headlineSmall" style={styles.header}>
-            🍕 Food Listings
-          </Text>
-          <Searchbar
-            placeholder="Search food, category, tags..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={styles.searchBar}
-            inputStyle={styles.searchInput}
-            iconColor={colors.textLight}
-            elevation={0}
-          />
-        </Surface>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.headerTitle}>
+          Food Listings
+        </Text>
+        <Text variant="bodyMedium" style={styles.headerSubtitle}>
+          Discover delicious food near you
+        </Text>
+      </View>
 
-        <Divider />
-
-        {/* Food Count */}
-        <View style={styles.countContainer}>
-          <Text variant="bodySmall" style={styles.countText}>
-            {filteredFoods.length} {filteredFoods.length === 1 ? 'item' : 'items'} found
-          </Text>
-        </View>
-
-        <FlatList
-          data={filteredFoods}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <FoodCard
-              food={item}
-              onPress={() => handleFoodPress(item)}
-              onFavoritePress={handleFavoritePress}
-              isFavoritedProp={favoriteStates[item.id]}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.noResultsContainer}>
-              <Text style={styles.noResultsEmoji}>🔍</Text>
-              <Text variant="titleMedium" style={styles.noResultsText}>
-                No results for "{searchQuery}"
-              </Text>
-            </View>
-          }
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <Searchbar
+          placeholder="Search food, category, tags..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchBar}
+          elevation={0}
         />
       </View>
+
+      {/* Categories */}
+      <View style={styles.categoryContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          {CATEGORIES.map((category) => (
+            <Chip
+              key={category}
+              selected={selectedCategory === category}
+              onPress={() => setSelectedCategory(category)}
+              style={styles.categoryChip}
+              mode={selectedCategory === category ? 'flat' : 'outlined'}
+            >
+              {category}
+            </Chip>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Results Count */}
+      <View style={styles.resultsContainer}>
+        <Text variant="bodyMedium" style={styles.resultsText}>
+          {filteredFoods.length} {filteredFoods.length === 1 ? 'item' : 'items'}
+        </Text>
+      </View>
+
+      {/* Food List */}
+      <FlatList
+        data={filteredFoods}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <FoodCard
+            food={item}
+            onPress={() => handleFoodPress(item)}
+            onFavoritePress={handleFavoritePress}
+            isFavoritedProp={favoriteStates[item.id]}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsEmoji}>🔍</Text>
+            <Text variant="titleMedium" style={styles.noResultsTitle}>
+              No results found
+            </Text>
+            <Text variant="bodyMedium" style={styles.noResultsText}>
+              Try adjusting your search or filters
+            </Text>
+          </View>
+        }
+      />
     </View>
   );
 };
@@ -225,86 +261,127 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8F9FA',
   },
-  headerSurface: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
+  
+  // Header
   header: {
-    color: colors.text,
-    fontWeight: '700',
-    marginBottom: spacing.md,
+    backgroundColor: colors.primary || '#FF6B6B',
+    paddingTop: (StatusBar.currentHeight || 0) + 20,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 28,
+  },
+  headerSubtitle: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 4,
+  },
+
+  // Search
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    marginTop: -15,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   searchBar: {
-    backgroundColor: colors.background,
+    backgroundColor: '#F5F5F7',
     borderRadius: 12,
     elevation: 0,
   },
-  searchInput: {
-    fontSize: 14,
+
+  // Categories
+  categoryContainer: {
+    marginTop: 16,
+    marginBottom: 8,
   },
-  countContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.background,
+  categoryScroll: {
+    paddingHorizontal: 16,
   },
-  countText: {
-    color: colors.textLight,
+  categoryChip: {
+    marginRight: 8,
   },
+
+  // Results
+  resultsContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  resultsText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+
+  // List
   listContent: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: 8,
+    paddingBottom: 100,
+  },
+
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
-    color: colors.textLight,
-    marginTop: spacing.lg,
+    marginTop: 16,
+    color: '#666',
   },
-  errorText: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
+
+  // Error
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  errorEmoji: {
+    fontSize: 72,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    color: '#1A1A1A',
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   errorMessage: {
-    color: colors.error,
-    marginBottom: spacing.md,
+    color: '#666',
     textAlign: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  retryText: {
-    color: colors.textLight,
-    marginTop: spacing.sm,
-    textAlign: 'center',
+    marginBottom: 24,
   },
   retryButton: {
-    marginTop: spacing.xl,
     borderRadius: 12,
   },
-  emptyText: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
-  },
-  emptyMessage: {
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    color: colors.textLight,
-    marginTop: spacing.sm,
-  },
+
+  // No Results
   noResultsContainer: {
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
+    paddingVertical: 60,
   },
   noResultsEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  noResultsTitle: {
+    color: '#1A1A1A',
+    fontWeight: '700',
+    marginBottom: 8,
   },
   noResultsText: {
-    color: colors.textLight,
+    color: '#666',
     textAlign: 'center',
   },
 });
