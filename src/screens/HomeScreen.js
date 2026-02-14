@@ -25,7 +25,7 @@ import {
 } from '../utils/storageService';
 import { colors, spacing } from '../styles/common';
 
-const CATEGORIES = ['All', 'Pizza', 'Burger', 'Sushi', 'Dessert', 'Drinks'];
+const CATEGORIES = ['All', 'Breakfast', 'Main Course', 'Snacks', 'Breads', 'Beverages', 'Desserts'];
 
 const HomeScreen = ({ navigation }) => {
   const [foods, setFoods] = useState([]);

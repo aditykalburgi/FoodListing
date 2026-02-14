@@ -83,7 +83,10 @@ const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
           {/* Category and Price Row */}
           <View style={styles.metaRow}>
             <View style={styles.categoryWrapper}>
-              <View style={styles.categoryDot} />
+              <View style={[
+                styles.categoryDot, 
+                { backgroundColor: food.isVeg ? '#4CAF50' : '#E53935' }
+              ]} />
               <Text style={styles.categoryText}>
                 {food.category || 'General'}
               </Text>
@@ -92,7 +95,7 @@ const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
             {food.price && (
               <View style={styles.priceContainer}>
                 <Text style={styles.priceText}>
-                  ${food.price}
+                  ₹{food.price}
                 </Text>
               </View>
             )}

@@ -106,7 +106,7 @@ const DetailsScreen = ({ route, navigation }) => {
             {food.price && (
               <Surface style={styles.priceBadge} elevation={2}>
                 <Text variant="titleLarge" style={styles.priceText}>
-                  ${food.price}
+                  ₹{food.price}
                 </Text>
               </Surface>
             )}
