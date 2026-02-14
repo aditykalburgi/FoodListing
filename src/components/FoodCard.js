@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
-  TouchableOpacity,
-  Image,
   StyleSheet,
+  Animated,
 } from 'react-native';
-import { colors, spacing, borderRadius, typography, commonStyles } from '../styles/common';
+import { Card, Text, Chip, IconButton, Surface } from 'react-native-paper';
+import { colors, spacing, borderRadius } from '../styles/common';
 import { isFavorite } from '../utils/storageService';
 
 const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
   const [isLocal_Favorited, setIsLocal_Favorited] = useState(false);
+  const [scaleAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
     if (isFavoritedProp !== undefined) {
@@ -26,130 +26,190 @@ const FoodCard = ({ food, onPress, onFavoritePress, isFavoritedProp }) => {
   };
 
   const handleFavoritePress = (e) => {
-    e.preventDefault();
+    // Animate heart button
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 1.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     if (onFavoritePress) {
       onFavoritePress(food);
     }
   };
 
   return (
-    <TouchableOpacity
-      style={[styles.card, commonStyles.shadowContainer]}
+    <Card 
+      style={styles.card} 
       onPress={onPress}
-      activeOpacity={0.7}
+      mode="elevated"
+      elevation={3}
     >
       <View style={styles.imageContainer}>
-        <Image
+        <Card.Cover
           source={{
             uri: food.image || 'https://via.placeholder.com/200?text=No+Image',
           }}
           style={styles.image}
           resizeMode="cover"
         />
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={handleFavoritePress}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.favoriteIcon}>
-            {isLocal_Favorited ? '❤️' : '🤍'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.ratingBadge}>
+          <Surface style={styles.ratingSurface} elevation={2}>
+            <Text style={styles.ratingText}>⭐ {food.rating || 'N/A'}</Text>
+          </Surface>
+        </View>
+        <Animated.View style={[styles.favoriteButton, { transform: [{ scale: scaleAnim }] }]}>
+          <IconButton
+            icon={isLocal_Favorited ? 'heart' : 'heart-outline'}
+            iconColor={isLocal_Favorited ? colors.error : colors.textLight}
+            size={28}
+            onPress={handleFavoritePress}
+            style={styles.favoriteIconButton}
+            mode="contained"
+            containerColor={colors.white}
+          />
+        </Animated.View>
       </View>
 
-      <View style={styles.content}>
-        <Text
-          style={[styles.title, typography.h3]}
+      <Card.Content style={styles.content}>
+        <Text 
+          variant="titleMedium" 
+          style={styles.title}
           numberOfLines={2}
         >
           {food.name || 'Unknown Food'}
         </Text>
 
-        <View style={styles.ratingContainer}>
-          <Text style={styles.ratingText}>⭐ {food.rating || 'N/A'}</Text>
-          <Text style={styles.categoryText}>{food.category || 'General'}</Text>
+        <View style={styles.categoryContainer}>
+          <Chip 
+            icon="food" 
+            mode="outlined" 
+            compact 
+            style={styles.categoryChip}
+            textStyle={styles.categoryChipText}
+          >
+            {food.category || 'General'}
+          </Chip>
+          {food.price && (
+            <Text variant="titleMedium" style={styles.priceText}>
+              ${food.price}
+            </Text>
+          )}
         </View>
 
         {food.tags && food.tags.length > 0 && (
           <View style={styles.tagsContainer}>
-            {food.tags.slice(0, 2).map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
+            {food.tags.slice(0, 3).map((tag, index) => (
+              <Chip
+                key={index}
+                compact
+                style={styles.tag}
+                textStyle={styles.tagText}
+                mode="flat"
+              >
+                {tag}
+              </Chip>
             ))}
           </View>
         )}
-      </View>
-    </TouchableOpacity>
+      </Card.Content>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    marginVertical: spacing.sm,
+    marginHorizontal: spacing.xs,
     borderRadius: borderRadius.lg,
-    marginVertical: spacing.md,
+    backgroundColor: colors.white,
     overflow: 'hidden',
   },
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: 200,
   },
   image: {
-    width: '100%',
-    height: '100%',
+    height: 180,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+  },
+  ratingBadge: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
+  },
+  ratingSurface: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.white,
+  },
+  ratingText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
   },
   favoriteButton: {
     position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: spacing.xs,
+    right: spacing.xs,
   },
-  favoriteIcon: {
-    fontSize: 24,
+  favoriteIconButton: {
+    margin: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   content: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   title: {
     color: colors.text,
+    fontWeight: '600',
     marginBottom: spacing.sm,
   },
-  ratingContainer: {
+  categoryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
-  ratingText: {
-    ...typography.body2,
-    color: colors.text,
-    fontWeight: '600',
+  categoryChip: {
+    backgroundColor: colors.secondary + '15',
+    borderColor: colors.secondary + '30',
   },
-  categoryText: {
-    ...typography.body2,
-    color: colors.textLight,
-    fontStyle: 'italic',
+  categoryChipText: {
+    fontSize: 12,
+    color: colors.secondary,
+  },
+  priceText: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   tagsContainer: {
     flexDirection: 'row',
-    gap: spacing.sm,
     flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   tag: {
-    backgroundColor: colors.primary + '20',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    backgroundColor: colors.primary + '15',
     borderRadius: borderRadius.sm,
   },
   tagText: {
-    ...typography.caption,
+    fontSize: 11,
     color: colors.primary,
     fontWeight: '500',
   },

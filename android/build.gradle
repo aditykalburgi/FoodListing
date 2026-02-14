@@ -18,4 +18,8 @@ buildscript {
     }
 }
 
+allprojects {
+    buildDir = new File(rootProject.projectDir.parentFile, "build/${project.name}")
+}
+
 apply plugin: "com.facebook.react.rootproject"

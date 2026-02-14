@@ -5,11 +5,21 @@ const API_URL = 'https://api.jsonbin.io/v3/b/698184b543b1c97be96155bf';
 export const fetchFoodItems = async () => {
   try {
     const response = await axios.get(API_URL);
-    // The API returns data in a 'record' field
     const foods = response.data.record;
+
+    let foodItems = [];
+    if (Array.isArray(foods)) {
+      foodItems = foods;
+    } else if (typeof foods === 'object' && foods !== null) {
+      foodItems = Object.keys(foods).map(key => ({
+        id: key,
+        ...foods[key],
+      }));
+    }
+
     return {
       success: true,
-      data: Array.isArray(foods) ? foods : Object.values(foods),
+      data: foodItems,
     };
   } catch (error) {
     return {

@@ -2,13 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   FlatList,
-  ActivityIndicator,
-  Text,
   StyleSheet,
-  SafeAreaView,
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { 
+  Text, 
+  Searchbar, 
+  ActivityIndicator, 
+  Surface,
+  Button,
+  Divider,
+} from 'react-native-paper';
 import FoodCard from '../components/FoodCard';
 import { fetchFoodItems } from '../services/foodService';
 import {
@@ -20,14 +25,29 @@ import { colors, spacing, typography, commonStyles } from '../styles/common';
 
 const HomeScreen = ({ navigation }) => {
   const [foods, setFoods] = useState([]);
+  const [filteredFoods, setFilteredFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [favoriteStates, setFavoriteStates] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadFoods();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredFoods(foods);
+    } else {
+      const filtered = foods.filter(food =>
+        food.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        food.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        food.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredFoods(filtered);
+    }
+  }, [searchQuery, foods]);
 
   // Reload favorite states when screen is focused
   useFocusEffect(
@@ -43,6 +63,7 @@ const HomeScreen = ({ navigation }) => {
 
     if (result.success) {
       setFoods(result.data);
+      setFilteredFoods(result.data);
       await updateFavoriteStates(result.data);
     } else {
       setError(result.error);
@@ -87,57 +108,87 @@ const HomeScreen = ({ navigation }) => {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <View style={commonStyles.safeArea}>
         <View style={commonStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, typography.body2]}>
-            Loading food items...
+          <ActivityIndicator size="large" color={colors.primary} animating={true} />
+          <Text variant="bodyMedium" style={styles.loadingText}>
+            Loading delicious food items...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error && foods.length === 0) {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <View style={commonStyles.safeArea}>
         <View style={commonStyles.centerContainer}>
-          <Text style={[styles.errorText, typography.h3]}>❌</Text>
-          <Text
-            style={[styles.errorMessage, typography.body1, commonStyles.errorText]}
-          >
+          <Text style={styles.errorText}>❌</Text>
+          <Text variant="titleMedium" style={styles.errorMessage}>
             {error}
           </Text>
-          <Text style={[styles.retryText, typography.caption]}>
+          <Text variant="bodySmall" style={styles.retryText}>
             Please check your internet connection and try again.
           </Text>
+          <Button 
+            mode="contained" 
+            onPress={loadFoods} 
+            style={styles.retryButton}
+            icon="refresh"
+          >
+            Try Again
+          </Button>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (foods.length === 0) {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <View style={commonStyles.safeArea}>
         <View style={commonStyles.centerContainer}>
-          <Text style={[styles.emptyText, typography.h3]}>🍽️</Text>
-          <Text style={[styles.emptyMessage, typography.body1]}>
+          <Text style={styles.emptyText}>🍽️</Text>
+          <Text variant="titleMedium" style={styles.emptyMessage}>
             No food items found
           </Text>
-          <Text style={[styles.emptySubtext, typography.caption]}>
+          <Text variant="bodySmall" style={styles.emptySubtext}>
             Please try refreshing the page
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <View style={commonStyles.safeArea}>
       <View style={styles.container}>
-        <Text style={[styles.header, typography.h2]}>🍕 Food Listings</Text>
+        {/* Header Section */}
+        <Surface style={styles.headerSurface} elevation={2}>
+          <Text variant="headlineSmall" style={styles.header}>
+            🍕 Food Listings
+          </Text>
+          <Searchbar
+            placeholder="Search food, category, tags..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchBar}
+            inputStyle={styles.searchInput}
+            iconColor={colors.textLight}
+            elevation={0}
+          />
+        </Surface>
+
+        <Divider />
+
+        {/* Food Count */}
+        <View style={styles.countContainer}>
+          <Text variant="bodySmall" style={styles.countText}>
+            {filteredFoods.length} {filteredFoods.length === 1 ? 'item' : 'items'} found
+          </Text>
+        </View>
+
         <FlatList
-          data={foods}
+          data={filteredFoods}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <FoodCard
@@ -153,11 +204,21 @@ const HomeScreen = ({ navigation }) => {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               tintColor={colors.primary}
+              colors={[colors.primary]}
             />
+          }
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsEmoji}>🔍</Text>
+              <Text variant="titleMedium" style={styles.noResultsText}>
+                No results for "{searchQuery}"
+              </Text>
+            </View>
           }
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -166,36 +227,63 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    color: colors.text,
+  headerSurface: {
+    backgroundColor: colors.white,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
-  listContent: {
+  header: {
+    color: colors.text,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  searchBar: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    elevation: 0,
+  },
+  searchInput: {
+    fontSize: 14,
+  },
+  countContainer: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  countText: {
+    color: colors.textLight,
+  },
+  listContent: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xxl,
   },
   loadingText: {
     color: colors.textLight,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   errorText: {
-    fontSize: 60,
+    fontSize: 64,
     marginBottom: spacing.lg,
   },
   errorMessage: {
     color: colors.error,
     marginBottom: spacing.md,
     textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
   retryText: {
     color: colors.textLight,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.xl,
+    borderRadius: 12,
   },
   emptyText: {
-    fontSize: 60,
+    fontSize: 64,
     marginBottom: spacing.lg,
   },
   emptyMessage: {
@@ -205,7 +293,19 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     color: colors.textLight,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+  },
+  noResultsContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  noResultsEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.md,
+  },
+  noResultsText: {
+    color: colors.textLight,
+    textAlign: 'center',
   },
 });
 

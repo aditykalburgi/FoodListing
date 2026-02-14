@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
-  Text,
-  TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { 
+  Text, 
+  Button, 
+  Surface, 
+  Divider,
+  IconButton,
+} from 'react-native-paper';
 import FoodCard from '../components/FoodCard';
 import { getFavorites, removeFavorite, clearFavorites } from '../utils/storageService';
-import { colors, spacing, typography, commonStyles } from '../styles/common';
+import { colors, spacing, borderRadius, typography, commonStyles } from '../styles/common';
 
 const FavoritesScreen = ({ navigation }) => {
   const [favorites, setFavorites] = useState([]);
@@ -69,49 +73,73 @@ const FavoritesScreen = ({ navigation }) => {
 
   if (loading && favorites.length === 0) {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <View style={commonStyles.safeArea}>
         <View style={commonStyles.centerContainer}>
-          <Text style={[styles.emptyText, typography.h3]}>❤️</Text>
-          <Text style={[styles.emptyMessage, typography.body1]}>
-            No favorites yet
-          </Text>
-          <Text style={[styles.emptySubtext, typography.caption]}>
-            Add your favorite foods by clicking the heart icon!
+          <Text style={styles.emptyText}>❤️</Text>
+          <Text variant="titleMedium" style={styles.emptyMessage}>
+            Loading favorites...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!loading && favorites.length === 0) {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <View style={commonStyles.safeArea}>
         <View style={commonStyles.centerContainer}>
-          <Text style={[styles.emptyText, typography.h3]}>🤍</Text>
-          <Text style={[styles.emptyMessage, typography.body1]}>
+          <Surface style={styles.emptyIconContainer} elevation={2}>
+            <Text style={styles.emptyIcon}>🤍</Text>
+          </Surface>
+          <Text variant="titleLarge" style={styles.emptyMessage}>
             No favorites yet
           </Text>
-          <Text style={[styles.emptySubtext, typography.caption]}>
-            Add your favorite foods by clicking the heart icon!
+          <Text variant="bodyMedium" style={styles.emptySubtext}>
+            Tap the heart icon on any food item to add it to your favorites!
           </Text>
+          <Button 
+            mode="contained" 
+            icon="home"
+            style={styles.browseButton}
+            onPress={() => {}}
+          >
+            Browse Foods
+          </Button>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <View style={commonStyles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <Text style={[styles.header, typography.h2]}>❤️ My Favorites</Text>
-          {favorites.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClearAll}
-            >
-              <Text style={styles.clearButtonText}>Clear All</Text>
-            </TouchableOpacity>
-          )}
+        {/* Header Section */}
+        <Surface style={styles.headerSurface} elevation={2}>
+          <View style={styles.headerContainer}>
+            <Text variant="headlineSmall" style={styles.header}>
+              ❤️ My Favorites
+            </Text>
+            {favorites.length > 0 && (
+              <Button
+                mode="text"
+                icon="delete-outline"
+                textColor={colors.error}
+                onPress={handleClearAll}
+                compact
+              >
+                Clear All
+              </Button>
+            )}
+          </View>
+        </Surface>
+
+        <Divider />
+
+        {/* Favorites Count */}
+        <View style={styles.countContainer}>
+          <Text variant="bodySmall" style={styles.countText}>
+            {favorites.length} {favorites.length === 1 ? 'favorite' : 'favorites'}
+          </Text>
         </View>
 
         <FlatList
@@ -126,17 +154,10 @@ const FavoritesScreen = ({ navigation }) => {
             />
           )}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
-
-        {favorites.length > 0 && (
-          <View style={styles.footerInfo}>
-            <Text style={[styles.footerText, typography.caption]}>
-              {favorites.length} favorite{favorites.length !== 1 ? 's' : ''}
-            </Text>
-          </View>
-        )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -145,56 +166,66 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  headerSurface: {
+    backgroundColor: colors.white,
+    paddingVertical: spacing.md,
+  },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
   },
   header: {
     color: colors.text,
+    fontWeight: '700',
     flex: 1,
   },
-  clearButton: {
-    paddingHorizontal: spacing.md,
+  countContainer: {
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.error + '20',
-    borderRadius: 6,
+    backgroundColor: colors.background,
   },
-  clearButtonText: {
-    ...typography.caption,
-    color: colors.error,
-    fontWeight: '600',
+  countText: {
+    color: colors.textLight,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xxl,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    marginBottom: spacing.lg,
+  },
+  emptyIcon: {
+    fontSize: 48,
   },
   emptyText: {
-    fontSize: 60,
+    fontSize: 64,
     marginBottom: spacing.lg,
   },
   emptyMessage: {
     color: colors.text,
+    fontWeight: '600',
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   emptySubtext: {
     color: colors.textLight,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     maxWidth: '80%',
     textAlign: 'center',
+    lineHeight: 22,
   },
-  footerInfo: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    alignItems: 'center',
-  },
-  footerText: {
-    color: colors.textLight,
+  browseButton: {
+    marginTop: spacing.xl,
+    borderRadius: borderRadius.lg,
   },
 });
 

@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   Image,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { 
+  Text, 
+  Button, 
+  Chip, 
+  Surface, 
+  Divider,
+  ActivityIndicator,
+  IconButton,
+} from 'react-native-paper';
 import {
   addFavorite,
   removeFavorite,
@@ -21,6 +27,7 @@ const DetailsScreen = ({ route, navigation }) => {
   const { food } = route.params;
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [scaleAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
     // Set header title to food name
@@ -44,6 +51,20 @@ const DetailsScreen = ({ route, navigation }) => {
   };
 
   const handleFavoriteToggle = async () => {
+    // Animate button
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     if (isFavorited) {
       const result = await removeFavorite(food.id);
       if (result.success) {
@@ -58,9 +79,9 @@ const DetailsScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <View style={commonStyles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Image Section */}
+        {/* Image Section with Overlay */}
         <View style={styles.imageContainer}>
           <Image
             source={{
@@ -69,37 +90,59 @@ const DetailsScreen = ({ route, navigation }) => {
             style={styles.image}
             resizeMode="cover"
           />
+          {/* Floating Rating Badge */}
+          <Surface style={styles.floatingRating} elevation={3}>
+            <Text style={styles.floatingRatingText}>⭐ {food.rating || 'N/A'}</Text>
+          </Surface>
         </View>
 
         {/* Details Section */}
-        <View style={styles.detailsContainer}>
-          {/* Title */}
-          <Text style={[styles.title, typography.h2]}>
-            {food.name || 'Unknown Food'}
-          </Text>
-
-          {/* Rating and Category */}
-          <View style={styles.metaContainer}>
-            <View style={styles.ratingBadge}>
-              <Text style={styles.ratingEmoji}>⭐</Text>
-              <Text style={[styles.ratingValue, typography.body1]}>
-                {food.rating || 'N/A'} / 5.0
-              </Text>
-            </View>
-            <View style={styles.categoryBadge}>
-              <Text style={[styles.categoryLabel, typography.body2]}>
-                {food.category || 'General'}
-              </Text>
-            </View>
+        <Surface style={styles.detailsContainer} elevation={0}>
+          {/* Title and Price Row */}
+          <View style={styles.titleRow}>
+            <Text variant="headlineMedium" style={styles.title}>
+              {food.name || 'Unknown Food'}
+            </Text>
+            {food.price && (
+              <Surface style={styles.priceBadge} elevation={2}>
+                <Text variant="titleLarge" style={styles.priceText}>
+                  ${food.price}
+                </Text>
+              </Surface>
+            )}
           </View>
+
+          {/* Category and Meta Chips */}
+          <View style={styles.metaContainer}>
+            <Chip 
+              icon="food" 
+              mode="outlined" 
+              style={styles.categoryChip}
+              textStyle={styles.chipText}
+            >
+              {food.category || 'General'}
+            </Chip>
+            {food.cuisine && (
+              <Chip 
+                icon="chef-hat" 
+                mode="outlined" 
+                style={styles.cuisineChip}
+                textStyle={styles.chipText}
+              >
+                {food.cuisine}
+              </Chip>
+            )}
+          </View>
+
+          <Divider style={styles.divider} />
 
           {/* Description */}
           {food.description && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, typography.h3]}>
-                Description
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                📝 Description
               </Text>
-              <Text style={[styles.description, typography.body2]}>
+              <Text variant="bodyMedium" style={styles.description}>
                 {food.description}
               </Text>
             </View>
@@ -108,96 +151,80 @@ const DetailsScreen = ({ route, navigation }) => {
           {/* Tags */}
           {food.tags && food.tags.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, typography.h3]}>
-                Tags
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                🏷️ Tags
               </Text>
               <View style={styles.tagsContainer}>
                 {food.tags.map((tag, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
+                  <Chip
+                    key={index}
+                    compact
+                    style={styles.tag}
+                    textStyle={styles.tagText}
+                    mode="flat"
+                  >
+                    {tag}
+                  </Chip>
                 ))}
               </View>
             </View>
           )}
 
-          {/* Price Section (if available) */}
-          {food.price && (
+          {/* Additional Info Cards */}
+          {(food.servings || food.prepTime) && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, typography.h3]}>
-                Price
-              </Text>
-              <Text style={[styles.priceText, typography.h3]}>
-                ${food.price}
-              </Text>
-            </View>
-          )}
-
-          {/* Additional Info */}
-          {(food.cuisine || food.servings || food.prepTime) && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, typography.h3]}>
-                Additional Info
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                ℹ️ Additional Info
               </Text>
               <View style={styles.infoGrid}>
-                {food.cuisine && (
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Cuisine</Text>
-                    <Text style={[styles.infoValue, typography.body2]}>
-                      {food.cuisine}
-                    </Text>
-                  </View>
-                )}
                 {food.servings && (
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Servings</Text>
-                    <Text style={[styles.infoValue, typography.body2]}>
+                  <Surface style={styles.infoItem} elevation={1}>
+                    <Text style={styles.infoIcon}>🍽️</Text>
+                    <Text variant="bodySmall" style={styles.infoLabel}>Servings</Text>
+                    <Text variant="titleMedium" style={styles.infoValue}>
                       {food.servings}
                     </Text>
-                  </View>
+                  </Surface>
                 )}
                 {food.prepTime && (
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Prep Time</Text>
-                    <Text style={[styles.infoValue, typography.body2]}>
+                  <Surface style={styles.infoItem} elevation={1}>
+                    <Text style={styles.infoIcon}>⏱️</Text>
+                    <Text variant="bodySmall" style={styles.infoLabel}>Prep Time</Text>
+                    <Text variant="titleMedium" style={styles.infoValue}>
                       {food.prepTime}
                     </Text>
-                  </View>
+                  </Surface>
                 )}
               </View>
             </View>
           )}
-        </View>
+        </Surface>
 
         {/* Favorite Button */}
         <View style={styles.buttonContainer}>
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} animating={true} />
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.favoriteButton,
-                isFavorited && styles.favoriteButtonActive,
-              ]}
-              onPress={handleFavoriteToggle}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.favoriteEmoji}>
-                {isFavorited ? '❤️' : '🤍'}
-              </Text>
-              <Text
+            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <Button
+                mode={isFavorited ? 'contained' : 'outlined'}
+                onPress={handleFavoriteToggle}
+                icon={isFavorited ? 'heart' : 'heart-outline'}
                 style={[
-                  styles.favoriteButtonText,
-                  isFavorited && styles.favoriteButtonTextActive,
+                  styles.favoriteButton,
+                  isFavorited && styles.favoriteButtonActive,
                 ]}
+                contentStyle={styles.favoriteButtonContent}
+                labelStyle={styles.favoriteButtonLabel}
+                buttonColor={isFavorited ? colors.error : undefined}
               >
                 {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
-              </Text>
-            </TouchableOpacity>
+              </Button>
+            </Animated.View>
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -208,59 +235,87 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 300,
+    height: 280,
     backgroundColor: colors.border,
+    position: 'relative',
   },
   image: {
     width: '100%',
     height: '100%',
   },
+  floatingRating: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.xl,
+  },
+  floatingRatingText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
   detailsContainer: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    marginTop: -spacing.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
   title: {
     color: colors.text,
-    marginBottom: spacing.md,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  priceBadge: {
+    backgroundColor: colors.success + '15',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  priceText: {
+    color: colors.success,
+    fontWeight: '700',
   },
   metaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
     gap: spacing.sm,
+    marginBottom: spacing.md,
+    flexWrap: 'wrap',
   },
-  ratingEmoji: {
-    fontSize: 18,
+  categoryChip: {
+    backgroundColor: colors.primary + '10',
+    borderColor: colors.primary + '30',
   },
-  ratingValue: {
-    color: colors.primary,
-    fontWeight: '600',
+  cuisineChip: {
+    backgroundColor: colors.secondary + '10',
+    borderColor: colors.secondary + '30',
   },
-  categoryBadge: {
-    backgroundColor: colors.secondary + '20',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+  chipText: {
+    fontSize: 12,
   },
-  categoryLabel: {
-    color: colors.secondary,
-    fontWeight: '500',
+  divider: {
+    marginVertical: spacing.md,
   },
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     color: colors.text,
-    marginBottom: spacing.md,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
   },
   description: {
     color: colors.textLight,
@@ -269,37 +324,35 @@ const styles = StyleSheet.create({
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   tag: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary + '15',
+    borderRadius: borderRadius.sm,
   },
   tagText: {
-    ...typography.caption,
-    color: colors.white,
+    fontSize: 12,
+    color: colors.primary,
     fontWeight: '500',
-  },
-  priceText: {
-    color: colors.success,
-    fontWeight: '700',
   },
   infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   infoItem: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+  },
+  infoIcon: {
+    fontSize: 24,
+    marginBottom: spacing.xs,
   },
   infoLabel: {
-    ...typography.caption,
     color: colors.textLight,
     marginBottom: spacing.xs,
   },
@@ -309,35 +362,23 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.lg,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.white,
   },
   favoriteButton: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.error,
   },
   favoriteButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    borderColor: colors.error,
   },
-  favoriteEmoji: {
-    fontSize: 24,
+  favoriteButtonContent: {
+    paddingVertical: spacing.sm,
   },
-  favoriteButtonText: {
-    ...typography.body1,
-    color: colors.primary,
+  favoriteButtonLabel: {
+    fontSize: 16,
     fontWeight: '600',
-  },
-  favoriteButtonTextActive: {
-    color: colors.white,
   },
 });
 
